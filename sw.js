@@ -1,28 +1,23 @@
 /**
  * Life of Tono — Service Worker
- * Cache-first strategy for all game assets → full offline support.
+ * Cache-first strategy → full offline support.
  */
 
-const CACHE_NAME = 'lifeoftono-v1';
+const CACHE_NAME = 'lifeoftono-v2';
 
-// All files that must be cached for offline play
+// Core files to precache for offline play
 const PRECACHE_URLS = [
   '/',
   '/index.html',
-  '/css/style.css',
-  '/js/levels.js',
-  '/js/game.js',
-  '/js/ui.js',
   '/manifest.json',
   // Google Fonts (cached on first visit)
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap',
+  'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Nunito+Sans:wght@400;600&display=swap',
 ];
 
 // ── Install: pre-cache core assets ─────────────────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      // Cache what we can; ignore failures (e.g. font CDN may be blocked)
       return Promise.allSettled(
         PRECACHE_URLS.map(url =>
           cache.add(url).catch(() => { /* non-fatal */ })
@@ -47,10 +42,8 @@ self.addEventListener('activate', event => {
 
 // ── Fetch: cache-first, network fallback ───────────────────────────
 self.addEventListener('fetch', event => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  // Skip cross-origin requests we don't cache (analytics, etc.)
   const url = new URL(event.request.url);
   const isSameOrigin = url.origin === self.location.origin;
   const isGoogleFont  = url.hostname === 'fonts.googleapis.com'
@@ -62,7 +55,6 @@ self.addEventListener('fetch', event => {
     caches.match(event.request).then(cached => {
       if (cached) return cached;
 
-      // Not in cache — fetch from network and cache for later
       return fetch(event.request).then(response => {
         if (!response || response.status !== 200 || response.type === 'error') {
           return response;
@@ -71,7 +63,6 @@ self.addEventListener('fetch', event => {
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, toCache));
         return response;
       }).catch(() => {
-        // Network failed and not cached — return offline fallback for pages
         if (event.request.destination === 'document') {
           return caches.match('/index.html');
         }
