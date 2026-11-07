@@ -62,8 +62,9 @@ function setupScreens() {
 
   // Lost overlay — Retry
   document.getElementById('btn-retry').addEventListener('click', () => {
+    document.getElementById('overlay-lost').hidden = true;
+    document.getElementById('overlay-win').hidden  = true;
     game.reset();
-    showScreen('play');
   });
 
   // Lost overlay — Map
@@ -92,6 +93,9 @@ function showScreen(name) {
 }
 
 function startLevel(levelData) {
+  // Always hide overlays before loading a new level
+  document.getElementById('overlay-win').hidden  = true;
+  document.getElementById('overlay-lost').hidden = true;
   game.loadLevel(levelData);
   updateLevelHeader(levelData);
   showScreen('play');
